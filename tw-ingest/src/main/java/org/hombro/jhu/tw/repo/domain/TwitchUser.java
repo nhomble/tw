@@ -1,7 +1,10 @@
 package org.hombro.jhu.tw.repo.domain;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -15,6 +18,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Data
 @Accessors(chain = true)
 public class TwitchUser {
+  public static int MAX_PAGE = 1000;
 
   @NotNull
   @Indexed(unique = true)
@@ -31,9 +35,21 @@ public class TwitchUser {
   private Integer totalFollowing;
   private Integer totalGamesBroadcasted;
 
-  private List<String> followers;
-  private List<String> following;
-  private List<GameBroadcast> gamesBroadcasted;
+  private List<String> followers = Collections.emptyList();
+  private List<String> following = Collections.emptyList();
+  private List<GameBroadcast> gamesBroadcasted = Collections.emptyList();
+
+  @Field(value = "_complete")
+  private boolean complete;
+
+  public TwitchUser checkCompleteness() {
+    complete = Stream.of(totalFollowers, totalFollowing, totalGamesBroadcasted, createdAt)
+        .noneMatch(Objects::isNull)
+        && followers.size() >= Math.min(totalFollowers - 5, MAX_PAGE)
+        && following.size() >= Math.min(totalFollowing - 5, MAX_PAGE)
+        && gamesBroadcasted.size() >= Math.min(totalGamesBroadcasted - 5, MAX_PAGE);
+    return this;
+  }
 
   public TwitchUser setName(String name) {
     setHash(Math.abs(name.hashCode()));

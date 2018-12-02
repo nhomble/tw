@@ -1,5 +1,8 @@
 package org.hombro.jhu.tw.service;
 
+
+import static org.hombro.jhu.tw.repo.domain.TwitchUser.MAX_PAGE;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -19,6 +22,7 @@ import org.hombro.jhu.tw.service.commands.GetUserCommand;
 import org.hombro.jhu.tw.service.commands.GetUserFollowersCommand;
 import org.hombro.jhu.tw.service.commands.GetUserFollowsCommand;
 import org.hombro.jhu.tw.service.commands.GetUserVideosCommand;
+import org.hombro.jhu.tw.service.commands.UserCompleteCommand;
 import org.hombro.jhu.tw.service.messaging.Message;
 
 // TODO not reactive, we just accum locally into list and hope for no OOM
@@ -36,10 +40,11 @@ final public class CommandExecutor {
   private <E> List<Message<Command>> handle(Iterator<E> it, Consumer<E> sideEffect,
       Function<E, Command> producer) {
     List<Message<Command>> ret = new ArrayList<>();
-    it.forEachRemaining(e -> {
+    for(int max = 0; max < MAX_PAGE && it.hasNext(); max++){
+      E e = it.next();
       sideEffect.accept(e);
       ret.add(producer.apply(e).asMessage());
-    });
+    }
     return ret;
   }
 
@@ -104,6 +109,11 @@ final public class CommandExecutor {
               .setViews(dto.getViews())
       );
     });
+    return Collections.emptyList();
+  }
+
+  public List<Message<Command>> handle(UserCompleteCommand userCompleteCommand){
+    twitchUserRepository.complete(userCompleteCommand.getUser());
     return Collections.emptyList();
   }
 }

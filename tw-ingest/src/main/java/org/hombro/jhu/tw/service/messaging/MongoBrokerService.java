@@ -1,9 +1,10 @@
 package org.hombro.jhu.tw.service.messaging;
 
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.hombro.jhu.tw.repo.domain.TwitchUser;
 import org.hombro.jhu.tw.service.CommandMapper;
@@ -27,11 +28,18 @@ public class MongoBrokerService implements BrokerService<Command> {
   public MongoBrokerService(CommandMapper commandMapper, MongoTemplate mongoTemplate) {
     this.commandMapper = commandMapper;
     this.mongoTemplate = mongoTemplate;
-    seed = new ConcurrentLinkedQueue<>(Arrays.asList(
-        GetUserCommand.forUser("shroud").asMessage(),
-        GetUserCommand.forUser("serral").asMessage(),
-        GetUserCommand.forUser("loltyler1").asMessage()
-    ));
+    seed = Stream.of(
+        "shroud",
+        "lotyler1",
+        "tofusenshi",
+        "Theonemanny",
+        "404BrokenBlade",
+        "MissCoookiez",
+        "deadmau5",
+        "stray228",
+        "djmariio"
+    ).map(user -> GetUserCommand.forUser(user).asMessage()
+    ).collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
   }
 
   @Override
@@ -54,13 +62,7 @@ public class MongoBrokerService implements BrokerService<Command> {
         new Criteria().andOperator(
             Criteria.where("_hash").mod(context.getTotalTasks(), context.getTaskId()),
             new Criteria().orOperator(
-                Criteria.where("createdAt").is(null),
-                Criteria.where("gamesBroadcasted").is(null),
-                Criteria.where("following").is(null),
-                Criteria.where("followers").is(null),
-                Criteria.where("totalFollowers").is(null),
-                Criteria.where("totalFollowing").is(null),
-                Criteria.where("totalGamesBroadcasted").is(null)
+                Criteria.where("_complete").is(false)
             )
         ));
     return Optional.ofNullable(mongoTemplate.findOne(query, TwitchUser.class)).flatMap(

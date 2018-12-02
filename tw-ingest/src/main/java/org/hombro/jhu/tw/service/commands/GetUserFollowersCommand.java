@@ -6,25 +6,19 @@ import org.hombro.jhu.tw.service.CommandExecutor;
 import org.hombro.jhu.tw.service.messaging.Message;
 
 @Getter
-public class GetUserFollowersCommand implements Command {
+public class GetUserFollowersCommand extends UserCommand {
 
-  private final String user;
 
   private GetUserFollowersCommand(String user) {
-    this.user = user;
+    super(user);
   }
 
-  public static GetUserFollowersCommand forUser(String user){
+  public static GetUserFollowersCommand forUser(String user) {
     return new GetUserFollowersCommand(user);
   }
 
   @Override
   public List<Message<Command>> dispatch(CommandExecutor executor) {
     return executor.handle(this);
-  }
-
-  @Override
-  public Message<Command> asMessage() {
-    return Message.keyedMessage(this.getClass().getCanonicalName() + "=" + user, this);
   }
 }

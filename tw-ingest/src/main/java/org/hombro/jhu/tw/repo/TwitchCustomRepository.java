@@ -33,4 +33,6 @@ public interface TwitchCustomRepository {
   default void addGames(Iterable<String> names) {
     names.forEach(this::addGame);
   }
+
+  void complete(String name);
 }

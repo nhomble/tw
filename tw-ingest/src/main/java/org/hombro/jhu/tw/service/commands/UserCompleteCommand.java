@@ -6,20 +6,18 @@ import org.hombro.jhu.tw.service.CommandExecutor;
 import org.hombro.jhu.tw.service.messaging.Message;
 
 @Getter
-public class GetUserCommand extends UserCommand {
+public class UserCompleteCommand extends UserCommand {
 
-  public GetUserCommand(String user) {
+  private UserCompleteCommand(String user) {
     super(user);
   }
 
-  public static GetUserCommand forUser(String user) {
-    return new GetUserCommand(user);
+  public static UserCompleteCommand forUser(String user){
+    return new UserCompleteCommand(user);
   }
 
   @Override
   public List<Message<Command>> dispatch(CommandExecutor executor) {
     return executor.handle(this);
   }
-
-
 }

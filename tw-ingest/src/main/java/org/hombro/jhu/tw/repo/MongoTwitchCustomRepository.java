@@ -39,8 +39,9 @@ public class MongoTwitchCustomRepository implements TwitchCustomRepository {
   public void assertUser(String user) {
     mongoTemplate.upsert(forName(user),
         new Update()
-            .set("name", user)
-            .set("_hash", new TwitchUser().setName(user).getHash()),
+            .setOnInsert("name", user)
+            .setOnInsert("_hash", new TwitchUser().setName(user).getHash())
+            .setOnInsert("_complete", false),
         TwitchUser.class);
   }
 
@@ -48,25 +49,31 @@ public class MongoTwitchCustomRepository implements TwitchCustomRepository {
   public void addUser(TwitchUser twitchUser) {
     log.info("adding user={}", twitchUser);
     mongoTemplate.upsert(forName(twitchUser.getName()), new Update()
-            .set("_hash", twitchUser.getHash())
+            .setOnInsert("_hash", twitchUser.getHash())
             .set("createdAt", twitchUser.getCreatedAt())
             .set("followers", twitchUser.getFollowers())
             .set("following", twitchUser.getFollowing())
             .set("totalFollowers", twitchUser.getTotalFollowers())
             .set("totalFollowing", twitchUser.getTotalFollowing())
             .set("totalGamesBroadcasted", twitchUser.getTotalGamesBroadcasted())
-            .set("gamesBroadcasted", twitchUser.getGamesBroadcasted()),
+            .set("gamesBroadcasted", twitchUser.getGamesBroadcasted())
+            .set("_complete", twitchUser.checkCompleteness().isComplete()),
         TwitchUser.class);
   }
 
   @Override
   public Optional<TwitchUser> findUser(String name) {
-    return Optional.ofNullable(mongoTemplate.findOne(forName(name), TwitchUser.class));
+    return Optional.ofNullable(mongoTemplate.findOne(new Query(
+        new Criteria().andOperator(
+            Criteria.where("name").is(name),
+            Criteria.where("createdAt").ne(null)
+        )
+    ), TwitchUser.class));
   }
 
   @Override
   public void addFollower(String name, String follower) {
-    addLink(name, follower, "follower");
+    addLink(name, follower, "followers");
   }
 
   @Override
@@ -76,16 +83,6 @@ public class MongoTwitchCustomRepository implements TwitchCustomRepository {
 
   private void addLink(String source, String link, String type) {
     log.info("addLink source={} link={} type={}", source, link, type);
-    Query q = new Query(new Criteria().andOperator(
-        Criteria.where("name").is(source),
-        Criteria.where(type).is(null)
-    ));
-    mongoTemplate.updateFirst(
-        q,
-        new Update()
-            .push(type, link),
-        TwitchUser.class
-    );
     mongoTemplate.updateFirst(forName(source), new Update()
         .addToSet(type, link), TwitchUser.class);
     assertUser(link);
@@ -117,17 +114,18 @@ public class MongoTwitchCustomRepository implements TwitchCustomRepository {
 
   @Override
   public void addBroadcastedGame(String name, GameBroadcast game) {
+    // TODO need to check for existence
     Criteria c = new Criteria().andOperator(
         Criteria.where("name").is(name),
         new Criteria().orOperator(
             Criteria.where("gamesBroadcasted").is(null),
             Criteria.where("gamesBroadcasted").elemMatch(
-                Criteria.where("game").ne(game.getGame())
+                Criteria.where("publishedAt").ne(game.getPublishedAt())
             )
         )
     );
     mongoTemplate.updateFirst(
-        new Query(c),
+        forName(name),
         new Update().addToSet("gamesBroadcasted", game),
         TwitchUser.class);
   }
@@ -142,6 +140,13 @@ public class MongoTwitchCustomRepository implements TwitchCustomRepository {
             .set("_hash", new TwitchGame().setGame(game).getHash()),
         TwitchGame.class
     );
+  }
+
+  @Override
+  public void complete(String name) {
+    log.info("complete name={}", name);
+    mongoTemplate
+        .updateFirst(forName(name), new Update().set("_complete", true), TwitchUser.class);
   }
 
   @Override

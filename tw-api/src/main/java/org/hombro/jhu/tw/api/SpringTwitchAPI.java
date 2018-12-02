@@ -86,12 +86,13 @@ public class SpringTwitchAPI implements TwitchAPI {
       Objects.requireNonNull(e.getResponseHeaders())
           .forEach(
               (key, value) -> log.error("header={} headerValue={} exception={}", key, value, e));
-      log.error(e.getResponseHeaders().toString());
+      log.error("uri={} headers={} e={}", uri, e.getResponseHeaders().toString(), e);
       throw new RuntimeException("Failed to get URI=" + uri, e);
     }
   }
 
-  static class PaginatedResponse<E extends PageElement, T extends TwitchPaginationDTO<E>> implements Iterator<E> {
+  static class PaginatedResponse<E extends PageElement, T extends TwitchPaginationDTO<E>> implements
+      Iterator<E> {
 
     private final Class<T> response;
     private final SpringTwitchAPI api;
@@ -173,7 +174,8 @@ public class SpringTwitchAPI implements TwitchAPI {
   }
 
   @SuppressWarnings("unchecked")
-  private <E extends PageElement, T extends TwitchPaginationDTO<E>> Iterator<E> getPaginated(URI uri,
+  private <E extends PageElement, T extends TwitchPaginationDTO<E>> Iterator<E> getPaginated(
+      URI uri,
       Class<T> response) {
     return PaginatedResponse.forResponse(this, response, uri);
   }
