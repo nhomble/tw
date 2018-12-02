@@ -14,6 +14,9 @@ import org.springframework.data.mongodb.core.mapping.Field;
 public class TwitchGame {
 
   private String game;
+  private int popularity;
+  private int viewers;
+  private int channels;
 
   @NotNull
   @Setter(value = AccessLevel.PRIVATE)

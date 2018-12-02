@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.hombro.jhu.tw.repo.domain.GameBroadcast;
+import org.hombro.jhu.tw.repo.domain.TwitchGame;
 import org.hombro.jhu.tw.repo.domain.TwitchUser;
 
 public interface TwitchCustomRepository {
@@ -28,10 +29,12 @@ public interface TwitchCustomRepository {
 
   void addBroadcastedGame(String name, GameBroadcast game);
 
-  void addGame(String name);
+  void assertGame(String name);
+
+  void addGame(TwitchGame twitchGame);
 
   default void addGames(Iterable<String> names) {
-    names.forEach(this::addGame);
+    names.forEach(this::assertGame);
   }
 
   void complete(String name);

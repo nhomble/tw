@@ -16,8 +16,11 @@ import org.hombro.jhu.tw.api.data.kraken.TwitchFollowDTO;
 import org.hombro.jhu.tw.api.data.kraken.TwitchVideoDTO;
 import org.hombro.jhu.tw.repo.TwitchCustomRepository;
 import org.hombro.jhu.tw.repo.domain.GameBroadcast;
+import org.hombro.jhu.tw.repo.domain.TwitchGame;
 import org.hombro.jhu.tw.repo.domain.TwitchUser;
 import org.hombro.jhu.tw.service.commands.Command;
+import org.hombro.jhu.tw.service.commands.GetAllGamesCommand;
+import org.hombro.jhu.tw.service.commands.GetGameCommand;
 import org.hombro.jhu.tw.service.commands.GetUserCommand;
 import org.hombro.jhu.tw.service.commands.GetUserFollowersCommand;
 import org.hombro.jhu.tw.service.commands.GetUserFollowsCommand;
@@ -40,7 +43,7 @@ final public class CommandExecutor {
   private <E> List<Message<Command>> handle(Iterator<E> it, Consumer<E> sideEffect,
       Function<E, Command> producer) {
     List<Message<Command>> ret = new ArrayList<>();
-    for(int max = 0; max < MAX_PAGE && it.hasNext(); max++){
+    for (int max = 0; max < MAX_PAGE && it.hasNext(); max++) {
       E e = it.next();
       sideEffect.accept(e);
       ret.add(producer.apply(e).asMessage());
@@ -112,8 +115,21 @@ final public class CommandExecutor {
     return Collections.emptyList();
   }
 
-  public List<Message<Command>> handle(UserCompleteCommand userCompleteCommand){
+  public List<Message<Command>> handle(UserCompleteCommand userCompleteCommand) {
     twitchUserRepository.complete(userCompleteCommand.getUser());
+    return Collections.emptyList();
+  }
+
+  public List<Message<Command>> handle(GetGameCommand getGameCommand) {
+    throw new UnsupportedOperationException("no api for this");
+  }
+
+  public List<Message<Command>> handle(GetAllGamesCommand getAllGamesCommand) {
+    twitchAPI.getTopGames().forEachRemaining(dto -> twitchUserRepository.addGame(new TwitchGame()
+        .setViewers(dto.getViewers())
+        .setPopularity(dto.getGame().getPopularity())
+        .setChannels(dto.getChannels())
+        .setGame(dto.getGame().getName())));
     return Collections.emptyList();
   }
 }

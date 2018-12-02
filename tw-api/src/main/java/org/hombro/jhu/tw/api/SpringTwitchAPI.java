@@ -4,8 +4,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HttpHeaders;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -13,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.hombro.jhu.tw.api.data.kraken.PageElement;
 import org.hombro.jhu.tw.api.data.kraken.TwitchFollowDTO;
 import org.hombro.jhu.tw.api.data.kraken.TwitchFollowPaginated;
+import org.hombro.jhu.tw.api.data.kraken.TwitchGameDTO;
+import org.hombro.jhu.tw.api.data.kraken.TwitchGamePaginated;
 import org.hombro.jhu.tw.api.data.kraken.TwitchPaginationDTO;
 import org.hombro.jhu.tw.api.data.kraken.TwitchUserDTO;
 import org.hombro.jhu.tw.api.data.kraken.TwitchVideoDTO;
@@ -210,5 +214,23 @@ public class SpringTwitchAPI implements TwitchAPI {
         .path("/kraken/users/{userId}")
         .build(name);
     return Optional.ofNullable(get(uri, TwitchUserDTO.class));
+  }
+
+  @Override
+  public Iterator<TwitchGameDTO> getTopGames() {
+    URI uri = builder.with()
+        .path("/kraken/games/top")
+        .build(Collections.emptyMap());
+    /*
+    TODO so even though we can get a total, this model breaks the pattern as far as I can tell
+    because we can only get data for the first 20
+     */
+    List<TwitchGameDTO> ret = new ArrayList<>();
+    Iterator<TwitchGameDTO> it = getPaginated(uri, TwitchGamePaginated.class);
+    for (int i = 0; i < 20; i++) {
+      assert it.hasNext() : "Failed to find next where i=" + i;
+      ret.add(it.next());
+    }
+    return ret.iterator();
   }
 }

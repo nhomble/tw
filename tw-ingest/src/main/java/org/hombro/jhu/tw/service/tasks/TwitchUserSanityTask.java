@@ -47,6 +47,8 @@ public class TwitchUserSanityTask implements Daemon {
             .ifPresent(l -> l.forEach(twitchRepo::assertUser));
         Optional.ofNullable(twitchUser.getFollowers())
             .ifPresent(l -> l.forEach(twitchRepo::assertUser));
+        Optional.ofNullable(twitchUser.getGamesBroadcasted())
+            .ifPresent(l -> l.forEach(g -> twitchRepo.assertGame(g.getGame())));
       });
     });
   }

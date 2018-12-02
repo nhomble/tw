@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.hombro.jhu.tw.repo.domain.TwitchGame;
 import org.hombro.jhu.tw.repo.domain.TwitchUser;
 import org.hombro.jhu.tw.service.commands.Command;
+import org.hombro.jhu.tw.service.commands.GetGameCommand;
 import org.hombro.jhu.tw.service.commands.GetUserCommand;
 import org.hombro.jhu.tw.service.commands.GetUserFollowersCommand;
 import org.hombro.jhu.tw.service.commands.GetUserFollowsCommand;
@@ -37,14 +39,13 @@ final public class CommandMapper {
 
         twitchUser.getFollowers().size() < Optional.ofNullable(twitchUser.getTotalFollowers())
             .orElse(Integer.MAX_VALUE) &&
-            twitchUser.getFollowers().size() < MAX_PAGE - 5?
+            twitchUser.getFollowers().size() < MAX_PAGE - 5 ?
             GetUserFollowersCommand.forUser(user) : null,
 
         twitchUser.getFollowing().size() <
             Optional.ofNullable(twitchUser.getTotalFollowing()).orElse(Integer.MAX_VALUE) - 5 &&
             twitchUser.getFollowing().size() < MAX_PAGE
             ? GetUserFollowsCommand.forUser(user) : null,
-
 
         twitchUser.isComplete() != twitchUser.checkCompleteness().isComplete() ? UserCompleteCommand
             .forUser(user) : null
@@ -55,5 +56,9 @@ final public class CommandMapper {
         .map(UserCommand::asMessage)
         .collect(Collectors.toList());
     return cms.stream().findFirst();
+  }
+
+  public Optional<Message<Command>> next(TwitchGame twitchGame) {
+    return Optional.of(GetGameCommand.forGame(twitchGame.getGame()).asMessage());
   }
 }

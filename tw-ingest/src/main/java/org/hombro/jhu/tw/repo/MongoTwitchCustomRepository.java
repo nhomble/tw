@@ -128,16 +128,36 @@ public class MongoTwitchCustomRepository implements TwitchCustomRepository {
         forName(name),
         new Update().addToSet("gamesBroadcasted", game),
         TwitchUser.class);
+    assertGame(game.getGame());
   }
 
   @Override
-  public void addGame(String game) {
-    log.info("addGame game={}");
+  public void assertGame(String game) {
+    /*
+     TODO it seems when users post custom broadcasts there doesn't need to be a game string
+     Instead of something nicer imho like "" we get null
+      */
+    game = game == null ? "USER_CUSTOM" : game;
+    log.info("assertGame game={}");
     mongoTemplate.upsert(
         new Query(Criteria.where("game").is(game)),
         new Update()
             .set("game", game)
-            .set("_hash", new TwitchGame().setGame(game).getHash()),
+            .setOnInsert("_hash", new TwitchGame().setGame(game).getHash()),
+        TwitchGame.class
+    );
+  }
+
+  @Override
+  public void addGame(TwitchGame twitchGame) {
+    log.info("addGame game={}", twitchGame);
+    mongoTemplate.upsert(
+        new Query(Criteria.where("game").is(twitchGame.getGame())),
+        new Update()
+            .set("game", twitchGame.getGame())
+            .setOnInsert("_hash", twitchGame.getHash())
+            .set("popularity", twitchGame.getPopularity())
+            .set("viewers", twitchGame.getViewers()),
         TwitchGame.class
     );
   }

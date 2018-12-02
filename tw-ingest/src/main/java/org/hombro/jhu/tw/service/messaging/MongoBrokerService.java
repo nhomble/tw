@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hombro.jhu.tw.repo.domain.TwitchUser;
 import org.hombro.jhu.tw.service.CommandMapper;
 import org.hombro.jhu.tw.service.commands.Command;
+import org.hombro.jhu.tw.service.commands.GetAllGamesCommand;
 import org.hombro.jhu.tw.service.commands.GetUserCommand;
 import org.hombro.jhu.tw.service.thread.TaskContext;
 import org.hombro.jhu.tw.service.thread.TaskContextHolder;
@@ -40,6 +41,8 @@ public class MongoBrokerService implements BrokerService<Command> {
         "djmariio"
     ).map(user -> GetUserCommand.forUser(user).asMessage()
     ).collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
+
+    seed.offer(new GetAllGamesCommand().asMessage());
   }
 
   @Override
@@ -58,14 +61,18 @@ public class MongoBrokerService implements BrokerService<Command> {
       return Optional.ofNullable(seed.poll());
     }
     TaskContext context = TaskContextHolder.getContext();
-    Query query = new Query(
+    Criteria modCriteria = Criteria.where("_hash")
+        .mod(context.getTotalTasks(), context.getTaskId());
+    Query userQuery = new Query(
         new Criteria().andOperator(
-            Criteria.where("_hash").mod(context.getTotalTasks(), context.getTaskId()),
+            modCriteria,
             new Criteria().orOperator(
                 Criteria.where("_complete").is(false)
             )
         ));
-    return Optional.ofNullable(mongoTemplate.findOne(query, TwitchUser.class)).flatMap(
-        commandMapper::next);
+
+    return Optional
+        .ofNullable(mongoTemplate.findOne(userQuery, TwitchUser.class))
+        .flatMap(commandMapper::next);
   }
 }
