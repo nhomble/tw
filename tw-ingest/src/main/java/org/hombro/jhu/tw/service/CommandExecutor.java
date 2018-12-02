@@ -28,16 +28,22 @@ import org.hombro.jhu.tw.service.commands.GetUserVideosCommand;
 import org.hombro.jhu.tw.service.commands.UserCompleteCommand;
 import org.hombro.jhu.tw.service.messaging.Message;
 
-// TODO not reactive, we just accum locally into list and hope for no OOM
+/**
+ * Double dispatch goodness, we here actually invoke our client and insert into our dbs as we
+ * understand from the dequeued message
+ *
+ * TODO not reactive, we just accum locally into list and hope for no OOM, we work because I know I
+ * am paging in the client, but still, not the greatest
+ */
 @Slf4j
 final public class CommandExecutor {
 
-  private final TwitchCustomRepository twitchUserRepository;
+  private final TwitchCustomRepository repository;
   private final TwitchAPI twitchAPI;
 
-  public CommandExecutor(TwitchAPI twitchAPI, TwitchCustomRepository twitchUserRepository) {
+  public CommandExecutor(TwitchAPI twitchAPI, TwitchCustomRepository repository) {
     this.twitchAPI = twitchAPI;
-    this.twitchUserRepository = twitchUserRepository;
+    this.repository = repository;
   }
 
   private <E> List<Message<Command>> handle(Iterator<E> it, Consumer<E> sideEffect,
@@ -52,7 +58,7 @@ final public class CommandExecutor {
   }
 
   public List<Message<Command>> handle(GetUserCommand getUserCommand) {
-    if (twitchUserRepository.findUser(getUserCommand.getUser()).isPresent()) {
+    if (repository.findUser(getUserCommand.getUser()).isPresent()) {
       return Collections.emptyList();
     }
     return twitchAPI.getUserByName(getUserCommand.getUser()).map(dto -> {
@@ -66,7 +72,7 @@ final public class CommandExecutor {
       int rT = fwerI.hasNext() ? fwerI.next().getTotal() : 0;
 
       log.info("add user={}", getUserCommand.getUser());
-      twitchUserRepository.addUser(new TwitchUser()
+      repository.addUser(new TwitchUser()
           .setCreatedAt(dto.getCreatedAt())
           .setTotalFollowers(rT)
           .setTotalFollowing(gT)
@@ -83,7 +89,7 @@ final public class CommandExecutor {
   public List<Message<Command>> handle(GetUserFollowersCommand getUserFollowersCommand) {
     return handle(
         twitchAPI.getFollowersForName(getUserFollowersCommand.getUser()),
-        follower -> twitchUserRepository
+        follower -> repository
             .addFollower(getUserFollowersCommand.getUser(), follower.getName()),
         follower -> GetUserCommand.forUser(follower.getName())
     );
@@ -92,7 +98,7 @@ final public class CommandExecutor {
   public List<Message<Command>> handle(GetUserFollowsCommand getUserFollowsCommand) {
     return handle(
         twitchAPI.getFollowingForName(getUserFollowsCommand.getUser()),
-        following -> twitchUserRepository
+        following -> repository
             .addFollowing(getUserFollowsCommand.getUser(), following.getName()),
         following -> GetUserCommand.forUser(following.getName())
     );
@@ -100,7 +106,7 @@ final public class CommandExecutor {
 
   public List<Message<Command>> handle(GetUserVideosCommand getUserVideosCommand) {
     twitchAPI.getVideosForName(getUserVideosCommand.getUser()).forEachRemaining(dto -> {
-      twitchUserRepository.addBroadcastedGame(getUserVideosCommand.getUser(),
+      repository.addBroadcastedGame(getUserVideosCommand.getUser(),
           new GameBroadcast()
               .setCreatedAt(dto.getCreatedAt())
               .setPublishedAt(dto.getPublishedAt())
@@ -116,7 +122,7 @@ final public class CommandExecutor {
   }
 
   public List<Message<Command>> handle(UserCompleteCommand userCompleteCommand) {
-    twitchUserRepository.complete(userCompleteCommand.getUser());
+    repository.complete(userCompleteCommand.getUser());
     return Collections.emptyList();
   }
 
@@ -125,7 +131,7 @@ final public class CommandExecutor {
   }
 
   public List<Message<Command>> handle(GetAllGamesCommand getAllGamesCommand) {
-    twitchAPI.getTopGames().forEachRemaining(dto -> twitchUserRepository.addGame(new TwitchGame()
+    twitchAPI.getTopGames().forEachRemaining(dto -> repository.addGame(new TwitchGame()
         .setViewers(dto.getViewers())
         .setPopularity(dto.getGame().getPopularity())
         .setChannels(dto.getChannels())

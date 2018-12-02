@@ -9,11 +9,11 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
-final public class TwitchDataService {
+final public class TwitchIngestionService {
 
   private final List<Runnable> runnables;
 
-  public TwitchDataService(List<TwitchDataIngestionTask> tasks,
+  public TwitchIngestionService(List<TwitchDataIngestionTask> tasks,
       TwitchUserSanityTask sanityTask) {
     runnables = new ArrayList<>();
     runnables.add(sanityTask);
