@@ -73,6 +73,8 @@ final public class CommandExecutor {
 
       log.info("add user={}", getUserCommand.getUser());
       repository.addUser(new TwitchUser()
+          .setType(dto.getType())
+          .setBio(dto.getBio())
           .setCreatedAt(dto.getCreatedAt())
           .setTotalFollowers(rT)
           .setTotalFollowing(gT)

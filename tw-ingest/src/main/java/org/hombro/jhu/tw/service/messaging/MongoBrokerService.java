@@ -31,14 +31,25 @@ public class MongoBrokerService implements BrokerService<Command> {
     this.mongoTemplate = mongoTemplate;
     seed = Stream.of(
         "shroud",
-        "lotyler1",
+        "imaqtpie", // leaguee
+        "lotyler1", // league
         "tofusenshi",
         "Theonemanny",
         "404BrokenBlade",
         "MissCoookiez",
-        "deadmau5",
-        "stray228",
-        "djmariio"
+        "deadmau5", // music
+        "stray228", // dota
+        "djmariio", // fifa
+        "summit1g", // br
+        "sae_jin", // art
+        "moogulz",
+        "sodapoppin", // chatting
+        "domingo", // chatting
+        "amouranth", // chatting
+        "coelho", // chatting
+        "bonjwa", // rimworld
+        "aazzdos", // skyrim
+        "mightyteapot" // gw1
     ).map(user -> GetUserCommand.forUser(user).asMessage()
     ).collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
 

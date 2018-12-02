@@ -50,6 +50,8 @@ public class MongoTwitchCustomRepository implements TwitchCustomRepository {
     log.info("adding user={}", twitchUser);
     mongoTemplate.upsert(forName(twitchUser.getName()), new Update()
             .setOnInsert("_hash", twitchUser.getHash())
+            .set("bio", twitchUser.getBio())
+            .set("type", twitchUser.getType())
             .set("createdAt", twitchUser.getCreatedAt())
             .set("followers", twitchUser.getFollowers())
             .set("following", twitchUser.getFollowing())
