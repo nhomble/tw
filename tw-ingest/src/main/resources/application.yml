@@ -1,0 +1,10 @@
+app:
+  twitch:
+    ingestion:
+
+spring:
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: twitch_exp
