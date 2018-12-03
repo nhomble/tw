@@ -38,8 +38,8 @@ public class TwitchUser {
   private Integer totalFollowing;
   private Integer totalGamesBroadcasted;
 
-  private List<String> followers = Collections.emptyList();
-  private List<String> following = Collections.emptyList();
+  private List<String> followers;
+  private List<String> following;
   private List<GameBroadcast> gamesBroadcasted = Collections.emptyList();
 
   @Field(value = "_complete")
