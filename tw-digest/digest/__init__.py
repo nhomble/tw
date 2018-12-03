@@ -1,3 +1,4 @@
+import pymongo as mongo
 import os
 
 
@@ -14,4 +15,112 @@ def off_root(path: str, f=None):
         return os.path.join(root, f)
 
 
-target_dir = "target"
+TARGET_DIR = "target"
+ASCENDING = mongo.ASCENDING
+DESCENDING = mongo.DESCENDING
+SPLIT = "split"
+
+_user_collection = "users"
+_game_collection = "games"
+
+
+class TwitchDataStore:
+    def __init__(self, client, db_name, limit=300, direction="split"):
+        self._client = client
+        self._db_name = db_name
+        self._limit = limit
+        self._users = [doc["name"] for doc in self._get_users(direction=direction)]
+        self._games = self.games_collection.distinct("game")
+
+    @property
+    def db(self):
+        return self._client[self._db_name]
+
+    @staticmethod
+    def connect_to(host: str, port: int, name: str, **kwargs):
+        client = mongo.MongoClient(host=host, port=port)
+        return TwitchDataStore(client, name, **kwargs)
+
+    @property
+    def user_headers(self):
+        return ["createdAt", "name", "totalFollowers", "totalFollowing", "totalGamesBroadcasted"]
+
+    @property
+    def game_headers(self):
+        return ["viewers", "game", "popularity"]
+
+    @property
+    def games_collection(self):
+        return self.db[_game_collection]
+
+    @property
+    def users_collection(self):
+        return self.db[_user_collection]
+
+    @property
+    def users(self):
+        return self._users
+
+    @property
+    def games(self):
+        return self._games
+
+    @property
+    def f_headers(self):
+        return ["user"] + self._users
+
+    def _get_users(self, by="totalFollowers", direction=DESCENDING):
+        if direction in [DESCENDING, ASCENDING]:
+            return self.users_collection.find(QUERY_COMPLETE).sort(by, direction).limit(self._limit)
+        elif direction == "split":
+            return list(self.users_collection \
+                        .find(QUERY_COMPLETE_BY(by)) \
+                        .sort(by, mongo.ASCENDING).limit(self._limit // 2)) \
+                   + list(self.users_collection.find(QUERY_COMPLETE_BY(by)) \
+                          .sort(by, mongo.DESCENDING) \
+                          .limit(self._limit // 2))
+        elif direction == "none":
+            return self.users_collection.find(QUERY_COMPLETE).limit(self._limit)
+        else:
+            raise RuntimeError("invalid selection=" + by)
+
+    def user_rows(self):
+        for doc in self._get_users():
+            yield {k: v for (k, v) in doc.items() if k in self.user_headers}
+
+    def game_rows(self):
+        for doc in self.games_collection.find():
+            yield {k: ascii(v) for (k, v) in doc.items() if k in self.game_headers}
+
+    def user_followers(self):
+        for doc in self._get_users():
+            d = {name: 1 if name in doc["followers"] else 0 for name in self._users}
+            d["user"] = doc["name"]
+            yield d
+
+    def user_following(self):
+        for doc in self._get_users():
+            d = {name: 1 if name in doc["following"] else 0 for name in self._users}
+            d["user"] = doc["name"]
+            yield d
+
+    def user_bidirectional(self):
+        for doc in self._get_users():
+            d = {name: 1 if name in doc["following"] or name in doc["followers"] else 0 for name in self._users}
+            d["user"] = doc["name"]
+            yield d
+
+    def user_playing(self):
+        for doc in self._get_users():
+            playing = [o.get("game", "") for o in doc["gamesBroadcasted"]]
+            d = {ascii(g): 1 if g in playing else 0 for g in self.games}
+            d["user"] = doc["name"]
+            yield d
+
+    @property
+    def user_playing_headers(self):
+        return ["user"] + [ascii(w) for w in self.games]
+
+
+QUERY_COMPLETE = {"_complete": True}
+QUERY_COMPLETE_BY = lambda by, x=1: {"$and": [{"_complete": True}, {by: {"$gte": x}}]}
