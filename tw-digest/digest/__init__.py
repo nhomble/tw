@@ -14,4 +14,4 @@ def off_root(path: str, f=None):
         return os.path.join(root, f)
 
 
-target_dir = off_root("target")
+target_dir = "target"
