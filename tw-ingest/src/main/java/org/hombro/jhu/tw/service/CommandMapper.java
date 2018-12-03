@@ -34,16 +34,16 @@ final public class CommandMapper {
 
         twitchUser.getGamesBroadcasted().size() < MAX_PAGE
             && twitchUser.getGamesBroadcasted().size() < Optional
-            .ofNullable(twitchUser.getTotalGamesBroadcasted()).orElse(Integer.MAX_VALUE) - 5 ?
+            .ofNullable(twitchUser.getTotalGamesBroadcasted()).orElse(Integer.MAX_VALUE) * .70 ?
             GetUserVideosCommand.forUser(user) : null,
 
         twitchUser.getFollowers().size() < Optional.ofNullable(twitchUser.getTotalFollowers())
-            .orElse(Integer.MAX_VALUE) &&
+            .orElse(Integer.MAX_VALUE) * .70 &&
             twitchUser.getFollowers().size() < MAX_PAGE - 5 ?
             GetUserFollowersCommand.forUser(user) : null,
 
         twitchUser.getFollowing().size() <
-            Optional.ofNullable(twitchUser.getTotalFollowing()).orElse(Integer.MAX_VALUE) - 5 &&
+            Optional.ofNullable(twitchUser.getTotalFollowing()).orElse(Integer.MAX_VALUE) * .70 &&
             twitchUser.getFollowing().size() < MAX_PAGE
             ? GetUserFollowsCommand.forUser(user) : null,
 
