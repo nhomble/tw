@@ -2,9 +2,9 @@ package org.hombro.jhu.tw.service.messaging;
 
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.hombro.jhu.tw.repo.domain.TwitchUser;
 import org.hombro.jhu.tw.service.CommandMapper;
@@ -13,6 +13,7 @@ import org.hombro.jhu.tw.service.commands.GetAllGamesCommand;
 import org.hombro.jhu.tw.service.commands.GetUserCommand;
 import org.hombro.jhu.tw.service.thread.TaskContext;
 import org.hombro.jhu.tw.service.thread.TaskContextHolder;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -26,32 +27,13 @@ public class MongoBrokerService implements BrokerService<Command> {
   private final MongoTemplate mongoTemplate;
   private final Queue<Message<Command>> seed;
 
-  public MongoBrokerService(CommandMapper commandMapper, MongoTemplate mongoTemplate) {
+  public MongoBrokerService(@Qualifier("seed") Set<String> seedUsers, CommandMapper commandMapper,
+      MongoTemplate mongoTemplate) {
     this.commandMapper = commandMapper;
     this.mongoTemplate = mongoTemplate;
-    seed = Stream.of(
-        "shroud",
-        "imaqtpie", // leaguee
-        "lotyler1", // league
-        "tofusenshi",
-        "Theonemanny",
-        "404BrokenBlade",
-        "MissCoookiez",
-        "deadmau5", // music
-        "stray228", // dota
-        "djmariio", // fifa
-        "summit1g", // br
-        "sae_jin", // art
-        "moogulz",
-        "sodapoppin", // chatting
-        "domingo", // chatting
-        "amouranth", // chatting
-        "coelho", // chatting
-        "bonjwa", // rimworld
-        "aazzdos", // skyrim
-        "mightyteapot" // gw1
-    ).map(user -> GetUserCommand.forUser(user).asMessage()
-    ).collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
+    seed = seedUsers.stream()
+        .map(user -> GetUserCommand.forUser(user).asMessage())
+        .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
 
     seed.offer(new GetAllGamesCommand().asMessage());
   }

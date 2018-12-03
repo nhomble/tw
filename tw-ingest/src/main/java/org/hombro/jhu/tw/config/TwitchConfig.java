@@ -2,14 +2,15 @@ package org.hombro.jhu.tw.config;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.hombro.jhu.tw.api.SpringTwitchAPI;
 import org.hombro.jhu.tw.repo.TwitchCustomRepository;
 import org.hombro.jhu.tw.repo.TwitchUserRepository;
 import org.hombro.jhu.tw.service.CommandExecutor;
-import org.hombro.jhu.tw.service.tasks.TwitchDataIngestionTask;
 import org.hombro.jhu.tw.service.commands.Command;
 import org.hombro.jhu.tw.service.messaging.BrokerService;
+import org.hombro.jhu.tw.service.tasks.TwitchDataIngestionTask;
 import org.hombro.jhu.tw.service.tasks.TwitchUserSanityTask;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -40,5 +41,10 @@ public class TwitchConfig {
   public TwitchUserSanityTask twitchUserSanityTask(TwitchCustomRepository customRepository,
       TwitchUserRepository twitchUserRepository) {
     return new TwitchUserSanityTask(customRepository, twitchUserRepository);
+  }
+
+  @Bean(name = "seed")
+  public Set<String> seed(TwitchProperties twitchProperties) {
+    return twitchProperties.getSeed();
   }
 }

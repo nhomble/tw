@@ -16,4 +16,6 @@ public class TwitchProperties {
 
   @NotEmpty
   private Set<String> ingestion = new HashSet<>();
+
+  private Set<String> seed = new HashSet<>();
 }
