@@ -140,7 +140,7 @@ public class MongoTwitchCustomRepository implements TwitchCustomRepository {
      Instead of something nicer imho like "" we get null
       */
     game = game == null ? "USER_CUSTOM" : game;
-    log.info("assertGame game={}");
+    log.info("assertGame game={}", game);
     mongoTemplate.upsert(
         new Query(Criteria.where("game").is(game)),
         new Update()
