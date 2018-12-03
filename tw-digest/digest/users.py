@@ -10,8 +10,8 @@ def main(host: str, port: int, db_name: str, target: str):
     with open(digest.off_root(target, f="user.csv"), 'w') as user_file:
         csvfile = csv.DictWriter(user_file, delimiter=',', fieldnames=store.user_headers)
         csvfile.writeheader()
-        for row in store.user_rows():
-            csvfile.writerow(row)
+        for row in store.users_collection.find({"$and": [{"_complete": False}, ]}).sort("totalFollowers"):
+            print(row["name"])
 
 
 if __name__ == "__main__":

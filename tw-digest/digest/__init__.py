@@ -31,6 +31,9 @@ class TwitchDataStore:
         self._limit = limit
         self._users = [doc["name"] for doc in self._get_users(direction=direction)]
         self._games = self.games_collection.distinct("game")
+        self._genres = [ele for sublist in
+                        [doc["genres"] for doc in self.games_collection.find({"genres": {"$exists": True}})] for ele in
+                        sublist]
 
     @property
     def db(self):
@@ -66,8 +69,16 @@ class TwitchDataStore:
         return self._games
 
     @property
+    def genres(self):
+        return self._genres
+
+    @property
     def f_headers(self):
         return ["user"] + self._users
+
+    @property
+    def user_genre_headers(self):
+        return ["user"] + [ascii(g) for g in self.genres]
 
     def _get_users(self, by="totalFollowers", direction=DESCENDING):
         if direction in [DESCENDING, ASCENDING]:
@@ -114,6 +125,21 @@ class TwitchDataStore:
         for doc in self._get_users():
             playing = [o.get("game", "") for o in doc["gamesBroadcasted"]]
             d = {ascii(g): 1 if g in playing else 0 for g in self.games}
+            d["user"] = doc["name"]
+            yield d
+
+    def genres_for_game(self, game: str):
+        doc = self.games_collection.find_one({"$and": [{"game": game}, {"genres": {"$exists": True}}]})
+        if doc is None:
+            return []
+        return doc["genres"]
+
+    def user_genre(self):
+        for doc in self._get_users():
+            playing = [o.get("game", "") for o in doc["gamesBroadcasted"]]
+            nested = [self.genres_for_game(g) for g in playing]
+            genres = [g for sublist in nested for g in sublist]
+            d = {ascii(g): 1 if g in genres else 0 for g in self.genres}
             d["user"] = doc["name"]
             yield d
 

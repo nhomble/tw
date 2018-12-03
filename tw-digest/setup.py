@@ -8,5 +8,5 @@ setup(
     license='',
     author='nicolas',
     author_email='nhomble1@jhu.edu',
-    description='digestion scripts from data dumped by the ingestion module', requires=['pymongo']
+    description='digestion scripts from data dumped by the ingestion module', requires=['pymongo', 'wikipedia']
 )

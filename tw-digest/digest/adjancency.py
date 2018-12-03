@@ -41,6 +41,12 @@ def main(host: str, port: int, db_name: str, target: str):
         for row in store.user_playing():
             csvfile.writerow(row)
 
+    with open(digest.off_root(target, f="user_genres.csv"), 'w') as ug_file:
+        csvfile = csv.DictWriter(ug_file, delimiter=',', fieldnames=store.user_genre_headers)
+        csvfile.writeheader()
+        for row in store.user_genre():
+            csvfile.writerow(row)
+
 
 if __name__ == "__main__":
     _parser = argparse.ArgumentParser()
