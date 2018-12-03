@@ -18,7 +18,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Data
 @Accessors(chain = true)
 public class TwitchUser {
-  public static int MAX_PAGE = 5000;
+  public static int MAX_PAGE = 200;
 
   @NotNull
   @Indexed(unique = true)
@@ -48,9 +48,9 @@ public class TwitchUser {
   public TwitchUser checkCompleteness() {
     complete = Stream.of(totalFollowers, totalFollowing, totalGamesBroadcasted, createdAt)
         .noneMatch(Objects::isNull)
-        && followers.size() >= Math.min(totalFollowers - 5, MAX_PAGE)
-        && following.size() >= Math.min(totalFollowing - 5, MAX_PAGE)
-        && gamesBroadcasted.size() >= Math.min(totalGamesBroadcasted - 5, MAX_PAGE);
+        && followers.size() >= Math.min(totalFollowers * .70, MAX_PAGE)
+        && following.size() >= Math.min(totalFollowing * .70, MAX_PAGE)
+        && gamesBroadcasted.size() >= Math.min(totalGamesBroadcasted * .70, MAX_PAGE);
     return this;
   }
 
