@@ -221,15 +221,15 @@ public class SpringTwitchAPI implements TwitchAPI {
     URI uri = builder.with()
         .path("/kraken/games/top")
         .build(Collections.emptyMap());
-    /*
-    TODO so even though we can get a total, this model breaks the pattern as far as I can tell
-    because we can only get data for the first 20
-     */
     List<TwitchGameDTO> ret = new ArrayList<>();
     Iterator<TwitchGameDTO> it = getPaginated(uri, TwitchGamePaginated.class);
-    for (int i = 0; i < 20; i++) {
-      assert it.hasNext() : "Failed to find next where i=" + i;
-      ret.add(it.next());
+    try {
+      while (it.hasNext()) {
+        assert it.hasNext() : "Failed to find next";
+        ret.add(it.next());
+      }
+    } catch (Throwable t) {
+      log.info("This is crap, but hardcoding 20 is worse ex={}", t);
     }
     return ret.iterator();
   }
