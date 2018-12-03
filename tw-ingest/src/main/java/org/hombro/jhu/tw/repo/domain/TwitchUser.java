@@ -18,7 +18,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Data
 @Accessors(chain = true)
 public class TwitchUser {
-  public static int MAX_PAGE = 200;
+  public static int MAX_PAGE = 2000;
 
   @NotNull
   @Indexed(unique = true)
