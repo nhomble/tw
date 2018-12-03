@@ -86,29 +86,29 @@ class TwitchDataStore:
 def main(host: str, port: int, db_name: str, target: str):
     store = TwitchDataStore.connect_to(host, port, db_name)
 
-    # with open(digest.off_root("target", f="user.csv"), 'w') as user_file:
-    #     csvfile = csv.DictWriter(user_file, delimiter=',', fieldnames=store.user_headers)
-    #     csvfile.writeheader()
-    #     for row in store.user_rows():
-    #         csvfile.writerow(row)
-    #
-    # with open(digest.off_root("target", f="games.csv"), 'w') as game_file:
-    #     csvfile = csv.DictWriter(game_file, delimiter=',', fieldnames=store.game_headers)
-    #     csvfile.writeheader()
-    #     for row in store.game_rows():
-    #         csvfile.writerow(row)
-    #
-    # with open(digest.off_root("target", f="user_following.csv"), 'w') as uadj_file:
-    #     csvfile = csv.DictWriter(uadj_file, delimiter=',', fieldnames=store.users)
-    #     csvfile.writeheader()
-    #     for row in store.user_following():
-    #         csvfile.writerow(row)
-    #
-    # with open(digest.off_root("target", f="user_followers.csv"), 'w') as uadj_file:
-    #     csvfile = csv.DictWriter(uadj_file, delimiter=',', fieldnames=store.users)
-    #     csvfile.writeheader()
-    #     for row in store.user_followers():
-    #         csvfile.writerow(row)
+    with open(digest.off_root("target", f="user.csv"), 'w') as user_file:
+        csvfile = csv.DictWriter(user_file, delimiter=',', fieldnames=store.user_headers)
+        csvfile.writeheader()
+        for row in store.user_rows():
+            csvfile.writerow(row)
+
+    with open(digest.off_root("target", f="games.csv"), 'w') as game_file:
+        csvfile = csv.DictWriter(game_file, delimiter=',', fieldnames=store.game_headers)
+        csvfile.writeheader()
+        for row in store.game_rows():
+            csvfile.writerow(row)
+
+    with open(digest.off_root("target", f="user_following.csv"), 'w') as uadj_file:
+        csvfile = csv.DictWriter(uadj_file, delimiter=',', fieldnames=store.users)
+        csvfile.writeheader()
+        for row in store.user_following():
+            csvfile.writerow(row)
+
+    with open(digest.off_root("target", f="user_followers.csv"), 'w') as uadj_file:
+        csvfile = csv.DictWriter(uadj_file, delimiter=',', fieldnames=store.users)
+        csvfile.writeheader()
+        for row in store.user_followers():
+            csvfile.writerow(row)
 
     with open(digest.off_root("target", f="user_games.csv"), 'w') as gadj_file:
         csvfile = csv.DictWriter(gadj_file, delimiter=',', fieldnames=store.user_playing_headers)
