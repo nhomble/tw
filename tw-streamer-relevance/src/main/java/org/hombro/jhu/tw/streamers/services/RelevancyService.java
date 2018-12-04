@@ -22,9 +22,9 @@ import org.springframework.data.mongodb.core.query.Update;
 @Slf4j
 public class RelevancyService implements Runnable {
 
-  private static int MAX_STREAMERS = 50;
-  private static int MAX_FOLLOWERS = 50;
-  private static int MAX_FOLLOWING = 50;
+  private static int MAX_STREAMERS = 100;
+  private static int MAX_FOLLOWERS = 100;
+  private static int MAX_FOLLOWING = 100;
 
   private final Set<String> streamers;
   private final TwitchAPI api;
@@ -57,19 +57,32 @@ public class RelevancyService implements Runnable {
           if (!streamer.equals(anotherStreamer)) {
             log.info("asserting link={} streamerCount={} followerCount={} otherStreamerCount={}",
                 link, k, i, j);
-            mongoTemplate.save(link);
+            mongoTemplate.upsert(
+                new Query(
+                    new Criteria().andOperator(
+                        Criteria.where("sourceStreamer").is(streamer),
+                        Criteria.where("linkedStreamer").is(anotherStreamer),
+                        Criteria.where("follower").is(follower)
+                    )
+                ),
+                new Update()
+                    .setOnInsert("sourceStreamer", streamer)
+                    .setOnInsert("linkedStreamer", anotherStreamer)
+                    .setOnInsert("follower", follower),
+                TwitchLink.class
+            );
           }
 
-          Stream.of(streamer, anotherStreamer).forEach(user -> {
+          Stream.of(streamer, anotherStreamer, follower).forEach(user -> {
             if (!mongoTemplate.exists(new Query(
                 new Criteria().andOperator(
-                    Criteria.where("name").is(streamer),
+                    Criteria.where("name").is(user),
                     Criteria.where("_complete").is(true)
                 )
             ), TwitchUser.class)) {
-              TwitchUserDTO userDTO = api.getUserByName(streamer)
-                  .orElseThrow(() -> new RuntimeException(streamer));
-              Iterator<TwitchVideoDTO> videoDTOIterator = api.getVideosForName(streamer);
+              TwitchUserDTO userDTO = api.getUserByName(user)
+                  .orElseThrow(() -> new RuntimeException(user));
+              Iterator<TwitchVideoDTO> videoDTOIterator = api.getVideosForName(user);
               List<GameBroadcast> broadcasts = new ArrayList<>();
               Iterator<TwitchFollowDTO> _followers = api.getFollowersForName(user);
               Iterator<TwitchFollowDTO> _following = api.getFollowingForName(user);
@@ -93,6 +106,8 @@ public class RelevancyService implements Runnable {
                   ),
                   new Update()
                       .set("name", newUser.getName())
+                      .set("bio", newUser.getBio())
+                      .set("type", newUser.getType())
                       .set("_complete", newUser.isComplete())
                       .set("createdAt", newUser.getCreatedAt())
                       .set("totalFollowers", newUser.getTotalFollowers())
