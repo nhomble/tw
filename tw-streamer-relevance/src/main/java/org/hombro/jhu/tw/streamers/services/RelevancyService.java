@@ -90,6 +90,8 @@ public class RelevancyService implements Runnable {
               TwitchUser newUser = new TwitchUser()
                   .setName(user)
                   .setComplete(true)
+                  .setBio(userDTO.getBio())
+                  .setType(userDTO.getType())
                   .setCreatedAt(userDTO.getCreatedAt())
                   .setTotalFollowers(_followers.hasNext() ? _followers.next().getTotal() : 0)
                   .setTotalFollowing(_following.hasNext() ? _following.next().getTotal() : 0);
