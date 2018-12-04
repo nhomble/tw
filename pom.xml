@@ -12,6 +12,7 @@
   <modules>
     <module>tw-ingest</module>
     <module>tw-api</module>
+    <module>tw-streamer-relevance</module>
   </modules>
 
   <dependencyManagement>

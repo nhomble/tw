@@ -3,12 +3,14 @@ package org.hombro.jhu.tw.streamers.repo;
 import com.google.common.base.MoreObjects;
 import lombok.Data;
 import lombok.experimental.Accessors;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Accessors(chain = true)
 @Document(collection = "links")
+@CompoundIndex(def = "{'sourceStreamer':1, 'linkedStreamer':1, 'follower':1}", unique = true)
 public class TwitchLink {
 
   @Indexed
