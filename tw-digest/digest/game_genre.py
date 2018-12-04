@@ -35,13 +35,14 @@ def get_genres(page):
     text = re.sub(pattern, '', text)
 
     accum = []
-    for w in ["multiplayer", "collectible", "online", "simulation", "strategy", "platform", "adventure", "puzzle"]:
+    for w in ["collectible", "online", "simulation", "strategy", "platform", "adventure", "puzzle"]:
         if w in text:
             accum.append(w)
             text = text.replace(w, "")
-    if len(text) > 0:
-        accum.append(text)
-    return [ele.strip() for ele in accum]
+    parts = text.split(",")
+    if len(parts) > 0 and len(parts[0]) > 0:
+        accum += parts
+    return list(set([ele.strip() for ele in accum]))
 
 
 def _wpage(query: str):
@@ -57,7 +58,11 @@ def _wpage(query: str):
 def main(host: str, port: int, db_name: str):
     store = digest.TwitchDataStore.connect_to(host, port, db_name)
 
+    i = 0
     for g in store.games_collection.find():
+        print("We are at i={}".format(i))
+        i += 1
+
         name = g["game"]
         if len(name) > 0:
             page = _wpage(name)
@@ -65,7 +70,7 @@ def main(host: str, port: int, db_name: str):
                 genres = get_genres(page)
                 print(",".join(genres))
                 print(store.games_collection.find_and_modify(query={"game": name}, update={"$set": {"genres": genres}},
-                                                     upsert=False, full_response=True))
+                                                             upsert=False, full_response=True))
 
 
 if __name__ == "__main__":

@@ -1,6 +1,8 @@
 import pymongo as mongo
 import os
 
+import digest
+
 
 def off_root(path: str, f=None):
     parts = os.path.split(__file__)
@@ -25,7 +27,7 @@ _game_collection = "games"
 
 
 class TwitchDataStore:
-    def __init__(self, client, db_name, limit=300, direction="split"):
+    def __init__(self, client, db_name, limit=2000, direction=digest.DESCENDING):
         self._client = client
         self._db_name = db_name
         self._limit = limit
@@ -34,6 +36,7 @@ class TwitchDataStore:
         self._genres = [ele for sublist in
                         [doc["genres"] for doc in self.games_collection.find({"genres": {"$exists": True}})] for ele in
                         sublist]
+        self._direction = direction
 
     @property
     def db(self):
@@ -80,6 +83,10 @@ class TwitchDataStore:
     def user_genre_headers(self):
         return ["user"] + [ascii(g) for g in self.genres]
 
+    @property
+    def user_summary_headers(self):
+        return ["user", "game", "genre"]
+
     def _get_users(self, by="totalFollowers", direction=DESCENDING):
         if direction in [DESCENDING, ASCENDING]:
             return self.users_collection.find(QUERY_COMPLETE).sort(by, direction).limit(self._limit)
@@ -94,6 +101,32 @@ class TwitchDataStore:
             return self.users_collection.find(QUERY_COMPLETE).limit(self._limit)
         else:
             raise RuntimeError("invalid selection=" + by)
+
+    def user_summary(self, weighted=False):
+        for doc in self.users_collection.find(
+                {"$and": [QUERY_COMPLETE, {"gamesBroadcasted": {"$exists": True}}]}).sort("totalFollowers",
+                                                                                          self._direction).limit(
+            self._limit):
+            try:
+                game_names = [ele.get("game") for ele in doc["gamesBroadcasted"] if "game" in ele]
+            except Exception as e:
+                print(e)
+            game = ""
+            if len(game_names) > 0:
+                game = most_frequent(game_names)
+            print("game={}".format(game))
+            nested = [self.games_collection.find_one({"$and": [{"game": game}, {"genres": {"$exists": True}}]}) for game
+                      in game_names]
+            nested = [doc["genres"] for doc in nested if doc is not None]
+            genres = [genre for sublist in nested if len(sublist) > 0 for genre in sublist]
+            genre = ""
+            if len(genres) > 0:
+                genre = most_frequent(genres)
+            yield {
+                "user": doc["name"],
+                "game": ascii(game),
+                "genre": genre
+            }
 
     def user_rows(self):
         for doc in self._get_users():
@@ -148,5 +181,15 @@ class TwitchDataStore:
         return ["user"] + [ascii(w) for w in self.games]
 
 
+def most_frequent(l):
+    histogram = {}
+    for ele in l:
+        if ele in histogram:
+            histogram[ele] += 1
+        else:
+            histogram[ele] = 1
+    return max(histogram.items(), key=lambda tup: tup[1])[0]
+
+
 QUERY_COMPLETE = {"_complete": True}
-QUERY_COMPLETE_BY = lambda by, x=1: {"$and": [{"_complete": True}, {by: {"$gte": x}}]}
+QUERY_COMPLETE_BY = lambda by, x=0: {"$and": [{"_complete": True}, {by: {"$gte": x}}]}
