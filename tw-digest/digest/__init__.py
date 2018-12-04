@@ -24,6 +24,7 @@ SPLIT = "split"
 
 _user_collection = "users"
 _game_collection = "games"
+_link_collection = "links"
 
 
 class TwitchDataStore:
@@ -62,6 +63,10 @@ class TwitchDataStore:
     @property
     def users_collection(self):
         return self.db[_user_collection]
+
+    @property
+    def links_collection(self):
+        return self.db[_link_collection]
 
     @property
     def users(self):
