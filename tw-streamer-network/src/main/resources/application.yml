@@ -1,0 +1,25 @@
+app:
+  twitch:
+    clients:
+      - nvje8zmgfe3fggv44481tejbui27i7
+      - vuo8muu2gia031um209h995tjby3t6
+      - zmzy7hx41fx4l58uzbgwzkv9eim461
+      - fo1hpoxctpuaturjv6gfdyczlqdhor
+      - l3uby8k59cvtpykyehfiy13fr324ye
+      - veq6x5a1qwbn6mspwyscns07uhp00s
+      - sqojyfnmkxmrmghez35cz4f6zjqenj
+      - chgyleuccpaw95uo1uolnak02fnhit
+      - j1rdt5pi7j07cw3j618lsjm0wmmtxq
+      - bszepa0u4fwllym2izf6wjp6dkb36a
+      - xv0lpci7zq7v8425fcx33biznpcdjl
+      - tws1zx8qailoqg9j33g73zoznkmxle
+      - 1fk8pax7lypwd7ztddq412ebqf5fn0
+      - kerk05hvukeugreeqlsbio85oqs8nu
+      - pac3onketbp6gqvrcenvtdusn9dv7p
+      - sm4ha9usvwluc1ljhemmzy5fmvz6l0
+spring:
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: twitch_network

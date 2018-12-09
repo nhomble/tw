@@ -1,4 +1,4 @@
-package org.hombro.jhu.tw.service.thread;
+package org.hombro.jhu.tw.core.thread;
 
 import org.springframework.core.NamedThreadLocal;
 

@@ -1,4 +1,4 @@
-package org.hombro.jhu.tw.service.tasks;
+package org.hombro.jhu.tw.core;
 
 import org.slf4j.Logger;
 
@@ -7,7 +7,7 @@ public interface Daemon extends Runnable {
   @Override
   default void run() {
     init();
-    while (true) {
+    while (!isFinished()) {
       try {
         task();
       } catch (Throwable t) {
@@ -34,4 +34,8 @@ public interface Daemon extends Runnable {
   Logger getLogger();
 
   void task();
+
+  default boolean isFinished(){
+    return false;
+  }
 }
