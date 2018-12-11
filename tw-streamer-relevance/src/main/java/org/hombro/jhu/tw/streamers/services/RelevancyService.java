@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.hombro.jhu.tw.api.TwitchAPI;
 import org.hombro.jhu.tw.api.data.kraken.TwitchFollowDTO;
@@ -39,12 +38,87 @@ public class RelevancyService implements Runnable {
 
   @Override
   public void run() {
+    for (String top : streamers) {
+      Iterator<TwitchFollowDTO> following = api.getFollowersForName(top);
+      following.forEachRemaining(followerObj -> {
+        String follower = followerObj.getName();
+
+        if (!mongoTemplate.exists(new Query(
+            new Criteria().andOperator(
+                Criteria.where("name").is(follower),
+                Criteria.where("_complete").is(true)
+            )
+        ), TwitchUser.class)) {
+          TwitchUserDTO userDTO = api.getUserByName(follower)
+              .orElseThrow(() -> new RuntimeException(follower));
+          Iterator<TwitchVideoDTO> videoDTOIterator = api.getVideosForName(follower);
+          List<GameBroadcast> broadcasts = new ArrayList<>();
+          Iterator<TwitchFollowDTO> _followers = api.getFollowersForName(follower);
+          Iterator<TwitchFollowDTO> _following = api.getFollowingForName(follower);
+
+          TwitchUser newUser = new TwitchUser()
+              .setName(follower)
+              .setComplete(true)
+              .setBio(userDTO.getBio())
+              .setType(userDTO.getType())
+              .setCreatedAt(userDTO.getCreatedAt())
+              .setTotalFollowers(_followers.hasNext() ? _followers.next().getTotal() : 0)
+              .setTotalFollowing(_following.hasNext() ? _following.next().getTotal() : 0);
+          videoDTOIterator.forEachRemaining(video -> {
+            newUser.setTotalGamesBroadcasted(video.getTotal());
+            broadcasts.add(new GameBroadcast()
+                .setGame(video.getGame()));
+          });
+
+          newUser.setGamesBroadcasted(broadcasts);
+          log.info("adding new user={}", newUser);
+          mongoTemplate.upsert(new Query(
+                  Criteria.where("name").is(follower)
+              ),
+              new Update()
+                  .set("name", newUser.getName())
+                  .set("bio", newUser.getBio())
+                  .set("type", newUser.getType())
+                  .set("_complete", newUser.isComplete())
+                  .set("createdAt", newUser.getCreatedAt())
+                  .set("totalFollowers", newUser.getTotalFollowers())
+                  .set("totalFollowing", newUser.getTotalFollowing())
+                  .set("totalGamesBroadcasted", newUser.getTotalGamesBroadcasted())
+                  .set("gameBroadcasts", newUser.getGamesBroadcasted()),
+              TwitchUser.class
+          );
+        }
+        log.info("linkedStreamer={} follower={} sourceStreamer={}", top, follower, follower);
+        mongoTemplate.upsert(
+            new Query(new Criteria().andOperator(
+                Criteria.where("linkedStreamer").is(top),
+                Criteria.where("follower").is(follower),
+                Criteria.where("sourceStreamer").is(follower)
+            )),
+            new Update()
+                .setOnInsert("linkedStreamer", top)
+                .setOnInsert("follower", follower)
+                .setOnInsert("sourceStreamer", follower),
+            TwitchLink.class);
+      });
+    }
+
+//    for(String user : streamers){
+//
+//    }
+//    return;
+//
+    /*
     Iterator<String> streams = streamers.iterator();
     for (int k = 0; k < MAX_STREAMERS && streams.hasNext(); k++) {
       String streamer = streams.next();
       Iterator<TwitchFollowDTO> followers = api.getFollowersForName(streamer);
       for (int i = 0; i < MAX_FOLLOWERS && followers.hasNext(); i++) {
         TwitchFollowDTO dto = followers.next();
+        if(mongoTemplate.exists(new Query(Criteria.where("follower").is(dto.getName())), TwitchLink.class)){
+          i--;
+          continue;
+        }
         String follower = dto.getName();
         Iterator<TwitchFollowDTO> following = api.getFollowingForName(follower);
         for (int j = 0; j < MAX_FOLLOWING && following.hasNext(); j++) {
@@ -122,6 +196,6 @@ public class RelevancyService implements Runnable {
           });
         }
       }
-    }
+    }*/
   }
 }

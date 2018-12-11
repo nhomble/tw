@@ -6,6 +6,7 @@ import static org.hombro.jhu.tw.repo.domain.TwitchUser.MAX_PAGE;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
@@ -18,6 +19,7 @@ import org.hombro.jhu.tw.repo.TwitchCustomRepository;
 import org.hombro.jhu.tw.repo.domain.GameBroadcast;
 import org.hombro.jhu.tw.repo.domain.TwitchGame;
 import org.hombro.jhu.tw.repo.domain.TwitchUser;
+import org.hombro.jhu.tw.service.commands.AssertFollowsSetCommand;
 import org.hombro.jhu.tw.service.commands.Command;
 import org.hombro.jhu.tw.service.commands.GetAllGamesCommand;
 import org.hombro.jhu.tw.service.commands.GetGameCommand;
@@ -27,6 +29,10 @@ import org.hombro.jhu.tw.service.commands.GetUserFollowsCommand;
 import org.hombro.jhu.tw.service.commands.GetUserVideosCommand;
 import org.hombro.jhu.tw.service.commands.UserCompleteCommand;
 import org.hombro.jhu.tw.service.messaging.Message;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 /**
  * Double dispatch goodness, we here actually invoke our client and insert into our dbs as we
@@ -38,10 +44,13 @@ import org.hombro.jhu.tw.service.messaging.Message;
 @Slf4j
 final public class CommandExecutor {
 
+  private final MongoTemplate mongoTemplate;
   private final TwitchCustomRepository repository;
   private final TwitchAPI twitchAPI;
 
-  public CommandExecutor(TwitchAPI twitchAPI, TwitchCustomRepository repository) {
+  public CommandExecutor(MongoTemplate mongoTemplate,
+      TwitchAPI twitchAPI, TwitchCustomRepository repository) {
+    this.mongoTemplate = mongoTemplate;
     this.twitchAPI = twitchAPI;
     this.repository = repository;
   }
@@ -73,6 +82,7 @@ final public class CommandExecutor {
 
       log.info("add user={}", getUserCommand.getUser());
       repository.addUser(new TwitchUser()
+          .setFollowing(new ArrayList<>())
           .setType(dto.getType())
           .setBio(dto.getBio())
           .setCreatedAt(dto.getCreatedAt())
@@ -98,12 +108,20 @@ final public class CommandExecutor {
   }
 
   public List<Message<Command>> handle(GetUserFollowsCommand getUserFollowsCommand) {
-    return handle(
+    handle(
         twitchAPI.getFollowingForName(getUserFollowsCommand.getUser()),
         following -> repository
             .addFollowing(getUserFollowsCommand.getUser(), following.getName()),
         following -> GetUserCommand.forUser(following.getName())
     );
+    TwitchUser twitchUser = mongoTemplate.findOne(
+        new Query(Criteria.where("name").is(getUserFollowsCommand.getUser())), TwitchUser.class);
+    mongoTemplate.findAndModify(
+        new Query(Criteria.where("name").is(getUserFollowsCommand.getUser())),
+        new Update()
+            .set("following", new HashSet<>(twitchUser.getFollowing())),
+        TwitchUser.class);
+    return Collections.emptyList();
   }
 
   public List<Message<Command>> handle(GetUserVideosCommand getUserVideosCommand) {
@@ -138,6 +156,17 @@ final public class CommandExecutor {
         .setPopularity(dto.getGame().getPopularity())
         .setChannels(dto.getChannels())
         .setGame(dto.getGame().getName())));
+    return Collections.emptyList();
+  }
+
+  public List<Message<Command>> handle(AssertFollowsSetCommand assertFollowsSetCommand) {
+    TwitchUser twitchUser = mongoTemplate.findOne(
+        new Query(Criteria.where("name").is(assertFollowsSetCommand.getUser())), TwitchUser.class);
+    mongoTemplate.findAndModify(
+        new Query(Criteria.where("name").is(assertFollowsSetCommand.getUser())),
+        new Update()
+            .set("follows", new HashSet<>(twitchUser.getFollowers())),
+        TwitchUser.class);
     return Collections.emptyList();
   }
 }

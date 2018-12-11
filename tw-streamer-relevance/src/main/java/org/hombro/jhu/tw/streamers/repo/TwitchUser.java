@@ -32,6 +32,7 @@ public class TwitchUser {
   private String bio;
   private String type;
 
+  @Indexed
   private Integer totalFollowers;
   private Integer totalFollowing;
   private Integer totalGamesBroadcasted;

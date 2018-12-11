@@ -15,6 +15,7 @@
     <module>tw-api</module>
     <module>tw-streamer-relevance</module>
     <module>tw-streamer-network</module>
+    <module>tw-network-sample</module>
   </modules>
 
   <dependencyManagement>

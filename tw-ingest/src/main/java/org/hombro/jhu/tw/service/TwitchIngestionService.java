@@ -3,6 +3,7 @@ package org.hombro.jhu.tw.service;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.hombro.jhu.tw.core.Daemon;
 import org.hombro.jhu.tw.service.tasks.TwitchDataIngestionTask;
 import org.hombro.jhu.tw.service.tasks.TwitchUserSanityTask;
 import org.springframework.stereotype.Service;
@@ -11,12 +12,12 @@ import org.springframework.stereotype.Service;
 @Slf4j
 final public class TwitchIngestionService {
 
-  private final List<Runnable> runnables;
+  private final List<Daemon> runnables;
 
   public TwitchIngestionService(List<TwitchDataIngestionTask> tasks,
       TwitchUserSanityTask sanityTask) {
     runnables = new ArrayList<>();
-    runnables.add(sanityTask);
+    //runnables.add(sanityTask);
     runnables.addAll(tasks);
   }
 

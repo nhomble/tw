@@ -5,33 +5,52 @@ import digest
 
 
 def main(host: str, port: int, db_name: str, target: str):
-    n = 5000
+    all_games = digest.all_known_games()
+    n = 1000
     store = digest.TwitchDataStore.connect_to(host, port, db_name, limit=n, direction=digest.DESCENDING)
 
-    followers = store.links_collection.find().limit(n).distinct("follower")
-    q = {"follower": {"$in": followers}}
-    sources = store.links_collection.find(q).distinct("sourceStreamer")
-    destinations = store.links_collection.find(q).distinct("linkedStreamer")
-    headers = list(set(sources + destinations))[:n]
-    print("headers length={}".format(len(headers)))
+    sources = [user for user in store.users if
+               store.links_collection.find_one({"$or": [{"sourceStreamer": user}, {"linkedStreamer": user}]})]
+
+    destinations = store.links_collection.find().distinct("sourceStreamer")
+    destinations = [ele for ele in destinations if store.users_collection.find_one(
+        {"$and": [{"name": ele}, {"totalGameBroadcasts": {"$gte": 1}}]}) is not None and
+                    store.links_collection.find_one()]
+    destinations = list(destinations)[:n]
+    nested = []
+    for linked in destinations:
+        nested.append(store.links_collection.find({"sourceStreamer": linked}).distinct("sourceStreamer"))
+    more_streamers = [s for sublist in nested for s in sublist]
+    more_streamers = list(set([s for s in more_streamers if store.users_collection.find_one({"name": s}) is not None]))
+
+    sources = [ele for ele in sources if store.users_collection.find_one({"name": ele}) is not None]
+
+    headers = list(set(sources + destinations + more_streamers))
+    print("headers={} length={}".format(headers, len(headers)))
     i = 0
     with open(digest.off_root(target, f="follows.csv"), 'w') as f:
-        csvfile = csv.DictWriter(f, delimiter=',', fieldnames=headers)
+        csvfile = csv.DictWriter(f, delimiter=',', fieldnames=["user"] + headers)
+        csvfile.writeheader()
         for name in headers:
             if i % 20 == 0:
                 print("i={} name={}".format(i, name))
             i += 1
             linked_to = [doc["linkedStreamer"] for doc in store.links_collection.find({"sourceStreamer": name})]
-            row = {other: 1 if other in linked_to else 0 for other in headers}
+            linked_from = [doc["sourceStreamer"] for doc in store.links_collection.find({"linkedStreamer": name})]
+            row = {other: 1 if other in linked_to or other in linked_from else 0 for other in headers}
+            row["user"] = name
             csvfile.writerow(row)
 
     with open(digest.off_root(target, f="follows_user_summary.csv"), 'w') as f:
-        csvfile = csv.DictWriter(f, delimiter=',', fieldnames=["user", "game", "genre"])
+        csvfile = csv.DictWriter(f, delimiter=',',
+                                 fieldnames=["user", "game", "genre", "hundreds", "thousands", "millions", "followers",
+                                             "following"] + all_games)
+        csvfile.writeheader()
         for user in headers:
             doc = store.users_collection.find_one({"name": user})
             game_names = []
             try:
-                game_names = [ele.get("game") for ele in doc["gamesBroadcasted"] if "game" in ele]
+                game_names = [ele.get("game") for ele in doc["gameBroadcasts"] if "game" in ele]
             except Exception as e:
                 print(e)
             game = ""
@@ -46,11 +65,24 @@ def main(host: str, port: int, db_name: str, target: str):
             genre = ""
             if len(genres) > 0:
                 genre = digest.most_frequent(genres)
+            if doc is None:
+                print(user)
+            count = 0
             d = {
                 "user": user,
                 "game": ascii(game),
-                "genre": genre
+                "genre": genre,
+                "hundreds": count > 100,
+                "thousands": count > 10000,
+                "millions": count > 1000000,
+                "followers": doc["totalFollowers"],
+                "following": doc["totalFollowing"]
             }
+            for g in all_games:
+                if g == game:
+                    d[g] = 1
+                else:
+                    d[g] = 0
             csvfile.writerow(d)
 
 

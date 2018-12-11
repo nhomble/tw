@@ -18,6 +18,7 @@ import org.hombro.jhu.tw.api.data.kraken.TwitchFollowPaginated;
 import org.hombro.jhu.tw.api.data.kraken.TwitchGameDTO;
 import org.hombro.jhu.tw.api.data.kraken.TwitchGamePaginated;
 import org.hombro.jhu.tw.api.data.kraken.TwitchPaginationDTO;
+import org.hombro.jhu.tw.api.data.kraken.TwitchStreamDTO;
 import org.hombro.jhu.tw.api.data.kraken.TwitchUserDTO;
 import org.hombro.jhu.tw.api.data.kraken.TwitchVideoDTO;
 import org.hombro.jhu.tw.api.data.kraken.TwitchVideoPaginated;
@@ -232,5 +233,14 @@ public class SpringTwitchAPI implements TwitchAPI {
       log.info("This is crap, but hardcoding 20 is worse ex={}", t);
     }
     return ret.iterator();
+  }
+
+  @Override
+  public Optional<TwitchStreamDTO> getStream(String user) {
+    URI uri = builder.with()
+        .path("/kraken/streams/{channel}")
+        .queryParam("stream_type", "all")
+        .build(user);
+    return Optional.ofNullable(get(uri, TwitchStreamDTO.class));
   }
 }

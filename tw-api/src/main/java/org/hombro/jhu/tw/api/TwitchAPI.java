@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.Optional;
 import org.hombro.jhu.tw.api.data.kraken.TwitchFollowDTO;
 import org.hombro.jhu.tw.api.data.kraken.TwitchGameDTO;
+import org.hombro.jhu.tw.api.data.kraken.TwitchStreamDTO;
 import org.hombro.jhu.tw.api.data.kraken.TwitchUserDTO;
 import org.hombro.jhu.tw.api.data.kraken.TwitchVideoDTO;
 
@@ -18,4 +19,8 @@ public interface TwitchAPI {
   Optional<TwitchUserDTO> getUserByName(String name);
 
   Iterator<TwitchGameDTO> getTopGames();
+
+  Optional<TwitchStreamDTO> getStream(String user);
+
+  
 }

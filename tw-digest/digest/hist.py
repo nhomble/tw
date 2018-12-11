@@ -9,18 +9,19 @@ import digest
 
 
 def main(host: str, port: int, db_name: str, factor: str):
-    buckets = 75
+
     store = digest.TwitchDataStore.connect_to(host, port, db_name)
-    x = [doc["totalGamesBroadcasted"] for doc in store.users_collection.find(digest.QUERY_COMPLETE_BY(factor, x=1000000))]
+    M = 2000
+    buckets = 50
 
-    n, bins, patches = plt.hist(x, buckets, facecolor='green')
+    x = [(doc["totalFollowing"] + 1) / (doc["totalFollowers"] + 1 ) for doc in store.users_collection.find({"totalFollowing": {"$lte": M}})]
 
-    plt.xlabel("bins({})".format(buckets))
-    # plt.yscale('log', nonposy='clip')
-    plt.ylabel("log({})".format(factor))
-    plt.title("Histogram of {} on a log scale".format(factor))
-    plt.grid(True)
+    print("COUNT={}".format(store.users_collection.find({"totalFollowing": {"$gt": M}}).count()))
+    plt.hist(x, buckets, facecolor='green')
 
+    plt.ylabel("Frequency of users")
+    plt.xlabel("Buckets={} by proportion (out-degree + 1) / (in-degree + 1)".format(buckets))
+    plt.title("Frequency of users by the proportion of their out-degree : in-degree")
     plt.show()
 
 

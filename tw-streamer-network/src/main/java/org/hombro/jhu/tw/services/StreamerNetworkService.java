@@ -108,6 +108,7 @@ public class StreamerNetworkService implements Runnable {
 
   @Override
   public void run() {
+    api.getStream("shroud");
     int i = 0;
     for (String top : streamers) {
       log.info("STREAMER_I={}", i);

@@ -40,7 +40,7 @@ public class StreamerConfig {
     PathMatchingResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
     List<String> streamers = Stream
         .of(IOUtils
-            .toString(resourcePatternResolver.getResources("names.csv")[0].getInputStream(),
+            .toString(resourcePatternResolver.getResources("missing.csv")[0].getInputStream(),
                 "UTF-8")
             .split("\n"))
         .map(String::trim)

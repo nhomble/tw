@@ -3,8 +3,6 @@ package org.hombro.jhu.tw.repo.domain;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Stream;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -46,11 +44,7 @@ public class TwitchUser {
   private boolean complete;
 
   public TwitchUser checkCompleteness() {
-    complete = Stream.of(totalFollowers, totalFollowing, totalGamesBroadcasted, createdAt)
-        .noneMatch(Objects::isNull)
-        && followers.size() >= Math.min(totalFollowers * .70, MAX_PAGE)
-        && following.size() >= Math.min(totalFollowing * .70, MAX_PAGE)
-        && gamesBroadcasted.size() >= Math.min(totalGamesBroadcasted * .70, MAX_PAGE);
+    complete = false;
     return this;
   }
 

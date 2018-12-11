@@ -17,9 +17,13 @@ app:
       - kerk05hvukeugreeqlsbio85oqs8nu
       - pac3onketbp6gqvrcenvtdusn9dv7p
       - sm4ha9usvwluc1ljhemmzy5fmvz6l0
+    seed:
+      - a
+
+
 spring:
   data:
     mongodb:
       host: localhost
       port: 27017
-      database: twitch_exp
+      database: twitch_streamers

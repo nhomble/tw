@@ -2,6 +2,7 @@ import pymongo as mongo
 import os
 
 import digest
+import requests
 
 
 def off_root(path: str, f=None):
@@ -25,6 +26,22 @@ SPLIT = "split"
 _user_collection = "users"
 _game_collection = "games"
 _link_collection = "links"
+
+
+class TwitchClient:
+    def __init__(self, client):
+        self.client_id = client
+        self.base = "https://api.twitch.tv/kraken"
+
+    def get_id(self, user):
+        obj = requests.get("https://api.twitch.tv/kraken/users/{}?client_id={}".format(user, self.client_id))
+        return obj.json()["_id"]
+
+    def follows_other(self, user, other):
+        obj = requests.get("https://api.twitch.tv/kraken/users/{}/follows/{}?client_id={}".format(self.get_id(user),
+                                                                                                  self.get_id(other),
+                                                                                                  self.client_id))
+        return None
 
 
 class TwitchDataStore:
@@ -194,6 +211,21 @@ def most_frequent(l):
         else:
             histogram[ele] = 1
     return max(histogram.items(), key=lambda tup: tup[1])[0]
+
+
+def all_known_games():
+    all_games = []
+    with open("resources/all_games.csv", 'r') as c:
+        for line in c.readlines():
+            texts = line.split(".")
+            if len(texts) < 2:
+                continue
+            text = texts[2]
+            parts = text.split("'")
+            if len(parts) < 3:
+                continue
+            all_games.append(parts[1])
+    return all_games
 
 
 QUERY_COMPLETE = {"_complete": True}
